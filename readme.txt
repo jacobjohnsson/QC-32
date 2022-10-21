@@ -1,7 +1,3 @@
-  
-  Documentation of QC-32 verstion 1.0                     Jacob's Fast Computing
-
-  Client: Stack Jumping Corporation
   Object: QC-32 "Quick Computer"
   ------------------------------------------------------------------------------
                                                                      7 June 1954
@@ -109,7 +105,7 @@
 
            #4. Halt.
 
-                The QC-32 stops computation.
+                The QC-32 outputs the value in register 0 and stops computation.
 
            #5. Output.
 
@@ -124,12 +120,12 @@
            #7. Load.
 
                 The register A receives the value at the offset indicated by 
-                register B.
+                the value at register B.
 
            #8. Store.
 
                 Writes the value stored in register A to the memory location
-                identified by register B.
+                identified by the value at register B.
 
            #9. Branch Unconditionally.
 
@@ -152,13 +148,32 @@
 
            #13. OR
 
-                The registers A receives the value at register B NAND:ed with 
+                The registers A receives the value at register B OR:ed with 
                 the registers C.
 
            #14.
 
 
 
+
+  Special Operators
+  --------------------
+
+  Special operators do not conform to the previously mentioned structure,
+  instead they are defined below. The operator number is the same as for
+  standard operators, the next 3 bits identifies a register and the other 25 
+  bits represents a whole value.
+
+               operator number
+               |      value
+               |      |
+               vvvv   vvvvvvvvvvvvvvvvvvvvvvvvv
+              .--------------------------------.
+              |ooooaaa.........................|
+              `--------------------------------'
+                   ^^^
+                   |
+                   register
 
            #15. Load Immediately.
 
