@@ -41,12 +41,17 @@ print_bin (uint value)
 }
 
 void
-print_bin_memory (uint * memory, uint length)
+print_bin_memory (uint * memory, uint min, uint max)
 {
 #if DEBUG
-    for (uint i = 0; i < length; i += 1) {
+    for (uint i = max; i >= min; i -= 1) {
+        printf ("[%5u] ", i);
         print_bin (memory[i]);
         printf ("\n");
+
+        if (i == 0) {
+          break;
+        }
     }
 #endif
 }
