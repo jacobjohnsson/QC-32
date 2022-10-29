@@ -57,12 +57,13 @@ print_bin_memory (uint * memory, uint min, uint max)
 }
 
 void
-print_registers (uint * memory, uint length, uint pc)
+print_state (QCState *state)
 {
 #if DEBUG
-    printf ("[%d]\n", pc);
-    for (uint i = 0; i < length; i += 1) {
-        printf("[%d]=%u\n", i, memory[i]);
+    printf ("pc=%d, ", state->pc);
+    for (uint i = 0; i < 8; i += 1) {
+        printf("r%u=%u, ", i, state->registers[i]);
     }
+    printf("\n");
 #endif
 }

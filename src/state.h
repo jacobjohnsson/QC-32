@@ -1,3 +1,6 @@
+#ifndef _STATE_H_
+#define _STATE_H_
+
 #include <stdlib.h>
 #include <stdbool.h>
 
@@ -22,3 +25,5 @@ QCState * QC_state_new ();
 
 /* Frees the resources held be QCState state */
 void QC_state_free (QCState *state);
+
+#endif /* _STATE_H_ */

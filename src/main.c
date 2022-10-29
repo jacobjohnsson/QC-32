@@ -78,7 +78,6 @@ assemble (char * path, uint * program)
   }
 
   while (fscanf (file, "%s", opcode_str) == 1) {
-  
     if (strcmp (opcode_str, "ADD") == 0) {
       fscanf (file, "%u %u %u", &r_a, &r_b, &r_c);
       program[i] = INSTRUCTION (ADDITION, r_a, r_b, r_c);
@@ -136,6 +135,10 @@ assemble (char * path, uint * program)
     }
     i++;
   }
+
+  if (fclose (file) != 0) {
+    printf ("Unable to close file %s", path);
+  }
 }
 
 void
@@ -167,7 +170,7 @@ single_step (QCState *state, uint instruction)
         print_bin_memory (state->memory, min, max);
         break;
       case 'r':
-        print_registers (state->registers, 8, state->pc);
+        print_state (state);
         break;
       case 'q':
         exit(0);
@@ -314,5 +317,7 @@ void main (int argc, char *argv[])
     }
     state->pc++;
   }
+
+  QC_state_free (state);
   printf ("Exiting successfully.");
 }
