@@ -105,7 +105,7 @@
 
            #4. Halt. HALT
 
-                The QC-32 outputs the value in register 0 and stops computation.
+                The QC-32 stops computation.
 
            #5. Output. OUTPUT
 

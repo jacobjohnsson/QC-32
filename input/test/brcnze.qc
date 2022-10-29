@@ -1,0 +1,6 @@
+LOADIM 0 3
+LOADIM 1 3
+BRCNZE 0 1 0 /* if (r_0 != 0) jump to r_1 */
+OUTPUT 0 0 0
+OUTPUT 0 0 1
+HALT 0 0 0

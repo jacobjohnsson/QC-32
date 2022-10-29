@@ -127,7 +127,8 @@ assemble (char * path, uint * program)
       uint value;
       fscanf (file, "%u %u", &r_a, &value);
 
-      program[i] = (LOAD_IMMEDIATELY << OP_CODE_SHIFT) | (r_a << 25) | value;
+      program[i] = (LOAD_IMMEDIATELY << OP_CODE_SHIFT) | (r_a << 25) |
+        (value & ((1 << 25) - 1));
       print_bin (program[i]);
     } else if (strcmp (opcode_str, "/* ")) {
       consume_line (file);
@@ -248,7 +249,6 @@ void main (int argc, char *argv[])
         read_standard_instruction_registers (instruction, &reg_a, &reg_b,
             &reg_c);
         state->halted = true;
-        printf ("%u\n", state->registers[0]);
         break;
       case OUTPUT:
         debug_msg ("OUTPUT\n");
@@ -287,8 +287,11 @@ void main (int argc, char *argv[])
         debug_msg ("BRANCH_IF_ZERO\n");
         read_standard_instruction_registers (instruction, &reg_a, &reg_b,
             &reg_c);
-        state->pc = (state->registers[reg_b] == 0) ?
-            state->registers[reg_a] : state->pc;
+        if (state->registers[reg_b] == 0) {
+          state->pc = state->registers[reg_a];
+        }
+        //state->pc = (state->registers[reg_b] == 0) ?
+            //state->registers[reg_a] : state->pc;
         break;
       case BRANCH_IF_NON_ZERO:
         debug_msg ("BRANCH_IF_NON_ZERO\n");
@@ -302,7 +305,8 @@ void main (int argc, char *argv[])
         read_standard_instruction_registers (instruction, &reg_a, &reg_b,
             &reg_c);
         state->registers[reg_a] =
-            ~(state->registers[reg_b] & state->registers[reg_c]);
+            ~(state->registers[reg_b] & state->registers[reg_c]) & ((1 << 25) - 1);
+        /* 0b0000|000|0.00000000.00000000.00000000 */
         break;
       case OR:
         debug_msg ("OR\n");
@@ -330,5 +334,5 @@ void main (int argc, char *argv[])
   }
 
   QC_state_free (state);
-  printf ("Exiting successfully.");
+  debug_msg ("Exiting successfully.");
 }

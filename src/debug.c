@@ -62,7 +62,7 @@ print_state (QCState *state)
 #if DEBUG
     printf ("pc=%d, ", state->pc);
     for (uint i = 0; i < 8; i += 1) {
-        printf("r%u=%u, ", i, state->registers[i]);
+        printf("r%u=%x, ", i, state->registers[i]);
     }
     printf("\n");
 #endif
