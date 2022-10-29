@@ -38,8 +38,7 @@ enum instruction {
   BRANCH_IF_NON_ZERO,
   NAND,
   OR,
-  /* TODO: Implement MOVE */
-  RESERVED,
+  MOVE,
   LOAD_IMMEDIATELY
 };
 
@@ -121,6 +120,9 @@ assemble (char * path, uint * program)
       fscanf (file, "%u %u %u", &r_a, &r_b, &r_c);
       program[i] = INSTRUCTION (OR, r_a, r_b, r_c);
       /* TODO: Implement MOVE */
+    } else if (strcmp (opcode_str, "MOVE") == 0) {
+      fscanf (file, "%u %u %u", &r_a, &r_b, &r_c);
+      program[i] = INSTRUCTION (MOVE, r_a, r_b, r_c);
     } else if (strcmp (opcode_str, "LOADIM") == 0) {
       uint value;
       fscanf (file, "%u %u", &r_a, &value);
@@ -189,13 +191,21 @@ void main (int argc, char *argv[])
   uint reg_a = 0;
   uint reg_b = 0;
   uint reg_c = 0;
+  char *program_file;
 
+  /* TODO: Refactor to switch with fall through */
   if (argc == 2) {
-    debug_msg ("Entering single stepping mode.");
-    state->singlestepping = (strcmp((const char *) argv[1], "d") == 0);
+    debug_msg ("Opening file ");
+    debug_msg (argv[1]);
+    program_file = argv[1];
+  } else if (argc == 3) {
+    debug_msg ("Opening file ");
+    debug_msg (argv[1]);
+    program_file = argv[1];
+    state->singlestepping = (strcmp (argv[2], "d") == 0);
   }
 
-  assemble ("input/function_call.qc", state->program);
+  assemble (argv[1], state->program);
 
   while (!state->halted) {
     uint instruction = state->program[state->pc];
@@ -301,10 +311,11 @@ void main (int argc, char *argv[])
         state->registers[reg_a] =
             state->registers[reg_b] | state->registers[reg_c];
         break;
-      case RESERVED:
-        /* TODO: Implement MOVE */
-        debug_msg ("RESERVED\n");
-        fatal_error ("RESERVED NOT IMPLEMENTED!");
+      case MOVE:
+        debug_msg ("MOVE\n");
+        read_standard_instruction_registers (instruction, &reg_a, &reg_b,
+            &reg_c);
+        state->registers[reg_a] = state->registers[reg_b];
         break;
       case LOAD_IMMEDIATELY:
         debug_msg ("LOAD_IMMEDIATELY\n");

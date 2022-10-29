@@ -1,6 +1,6 @@
   Object: QC-32 "Quick Computer"
   ------------------------------------------------------------------------------
-                                                                     7 June 1954
+                                                                 23 October 2022
 
   Physical Specifiations
   ----------------------
@@ -83,79 +83,77 @@
 
   A description of each standard operator follows.
 
-  Operator #0. Addition.
+  Operator #0. Addition. ADD
 
                 The register A receives the value in register B plus the value
                 in register C.
 
-           #1. Subtraction.
+           #1. Subtraction. SUB
 
                 The register A receives the value in register B minus the value
                 in register C.
 
-           #2. Multiplication.
+           #2. Multiplication. MUL
 
                 The register A receives the value in register B multiplied by 
                 the value in register C.
 
-           #3. Division.
+           #3. Division. DIV
 
                 The register A receives the value in register B divided by the
                 value in register C.
 
-           #4. Halt.
+           #4. Halt. HALT
 
                 The QC-32 outputs the value in register 0 and stops computation.
 
-           #5. Output.
+           #5. Output. OUTPUT
 
                 The value in register C is diplayed on the console immediately.
                 Accepts positive integers.
 
-           #6. Input.
+           #6. Input. INPUT
 
                 The QC-32 waits for input on the console. When input arrives
                 register C is loaded with the input. Accepts positive values.
 
-           #7. Load.
+           #7. Load. LOAD
 
                 The register A receives the value at the offset indicated by 
                 the value at register B.
 
-           #8. Store.
+           #8. Store. STORE
 
                 Writes the value stored in register A to the memory location
                 identified by the value at register B.
 
-           #9. Branch Unconditionally.
+           #9. Branch Unconditionally. BRCUNC
 
                 Sets the program counter to the value in register C.
 
-           #10. Branch If Zero.
+           #10. Branch If Zero. BRCZER
 
                 Sets the program counter to the value in A if the value in 
                 register B is zero. Otherwise it does nothing.
 
-           #11. Branch non Zero.
+           #11. Branch non Zero. BRCNZE
 
                 Sets the program counter to the value in A if the value in 
                 register B is not zero. Otherwise it does nothing.
 
-           #12. NAND.
+           #12. NAND. NAND
 
                 The register A receives the value at register B NAND:ed with 
                 the register C.
 
-           #13. OR.
+           #13. OR. OR
 
                 The register A receives the value at register B OR:ed with 
                 the register C.
 
-           #14. Move.
-  
+           #14. Move. MOVE
+
                 The register A receives the value at register B.
-
-
 
 
   Special Operators
@@ -177,7 +175,7 @@
                    |
                    register
 
-           #15. Load Immediately.
+           #15. Load Immediately. LOADIM
 
                 Register A receives the value supplied by the instruction.
 
