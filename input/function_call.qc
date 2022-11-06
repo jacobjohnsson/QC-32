@@ -1,4 +1,5 @@
-/* r_0 holds return address, r1 holds stack pointer, r_2 holds return value. Put arguments at stack pointer */
+/* r_0 holds return address, r1 holds stack pointer, r_2 holds return value. */
+/* Put arguments at stack pointer */
 /* fun: MAIN */
 INPUT 0 0 2 /* read -> r_2 */
 LOADIM 0 4  /* return address -> r_0 */

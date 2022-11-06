@@ -287,3 +287,5 @@
 
   The caller should now be able to continue execution by restoring it's
   registers, if necessary.
+
+  If the function returns a value, it must be stored in register 3.

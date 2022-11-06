@@ -6,14 +6,14 @@
 
 #include "main.h"
 
-#define MEMORY_SIZE 2^8
-#define PROGRAM_SIZE 2^8
+#define MEMORY_SIZE 1<<16
+#define PROGRAM_SIZE 1<<16
 
 struct _QCState
 {
-  uint program[PROGRAM_SIZE];
-  uint memory [MEMORY_SIZE];
-  uint registers[8];
+  uint *program;
+  uint *memory;
+  uint *registers;
   uint pc;
   bool halted;
   bool singlestepping;
