@@ -64,7 +64,7 @@ consume_line (FILE *file)
 static bool
 assemble (char * path, uint * program)
 {
-  char opcode_str[7] = { 0  };
+  char opcode_str[7] = { 0 };
   uint r_a;
   uint r_b;
   uint r_c;
@@ -119,7 +119,6 @@ assemble (char * path, uint * program)
     } else if (strcmp (opcode_str, "OR") == 0) {
       fscanf (file, "%u %u %u", &r_a, &r_b, &r_c);
       program[i] = INSTRUCTION (OR, r_a, r_b, r_c);
-      /* TODO: Implement MOVE */
     } else if (strcmp (opcode_str, "MOVE") == 0) {
       fscanf (file, "%u %u %u", &r_a, &r_b, &r_c);
       program[i] = INSTRUCTION (MOVE, r_a, r_b, r_c);
@@ -129,10 +128,9 @@ assemble (char * path, uint * program)
 
       program[i] = (LOAD_IMMEDIATELY << OP_CODE_SHIFT) | (r_a << 25) |
         (value & ((1 << 25) - 1));
-      print_bin (program[i]);
     } else if (strcmp (opcode_str, "/* ")) {
       consume_line (file);
-      i--;
+      continue;
     } else {
       printf ("Unrecognized instruction operator: %s\n", opcode_str);
     }
@@ -162,15 +160,17 @@ single_step (QCState *state, uint instruction)
   debug_msg ("\n");
   printf ("\\ ");
   scanf ("%c", &input);
+  uint min;
+  uint max;
   while (!halt) {
     switch (input) {
       case 'm':
-        uint min;
-        uint max;
-        uint i = 0;
-
         scanf ("%u %u", &min, &max);
         print_bin_memory (state->memory, min, max);
+        break;
+      case 'p':
+        scanf ("%u %u", &min, &max);
+        print_bin_memory (state->program, min, max);
         break;
       case 'r':
         print_state (state);
@@ -198,10 +198,12 @@ void main (int argc, char *argv[])
   if (argc == 2) {
     debug_msg ("Opening file ");
     debug_msg (argv[1]);
+    debug_msg ("\n");
     program_file = argv[1];
   } else if (argc == 3) {
     debug_msg ("Opening file ");
     debug_msg (argv[1]);
+    debug_msg ("\n");
     program_file = argv[1];
     state->singlestepping = (strcmp (argv[2], "d") == 0);
   }
@@ -217,7 +219,7 @@ void main (int argc, char *argv[])
 
     switch (OP_CODE(instruction)) {
       case ADDITION:
-        debug_msg ("ADDITION");
+        debug_msg ("ADDITION\n");
         read_standard_instruction_registers (instruction, &reg_a, &reg_b,
             &reg_c);
         state->registers[reg_a] =
@@ -290,8 +292,6 @@ void main (int argc, char *argv[])
         if (state->registers[reg_b] == 0) {
           state->pc = state->registers[reg_a];
         }
-        //state->pc = (state->registers[reg_b] == 0) ?
-            //state->registers[reg_a] : state->pc;
         break;
       case BRANCH_IF_NON_ZERO:
         debug_msg ("BRANCH_IF_NON_ZERO\n");
@@ -306,7 +306,6 @@ void main (int argc, char *argv[])
             &reg_c);
         state->registers[reg_a] =
             ~(state->registers[reg_b] & state->registers[reg_c]) & ((1 << 25) - 1);
-        /* 0b0000|000|0.00000000.00000000.00000000 */
         break;
       case OR:
         debug_msg ("OR\n");

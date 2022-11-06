@@ -45,7 +45,8 @@ print_bin_memory (uint * memory, uint min, uint max)
 {
 #if DEBUG
     for (uint i = max; i >= min; i -= 1) {
-        printf ("[%5u] ", i);
+        printf ("[%3u] ", i);
+        printf ("\t%12x\t", memory[i]);
         print_bin (memory[i]);
         printf ("\n");
 
