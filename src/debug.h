@@ -1,7 +1,7 @@
 #include "main.h"
 #include "state.h"
 
-#define DEBUG 1
+#define DEBUG 0
 
 void debug_msg (char *msg);
 

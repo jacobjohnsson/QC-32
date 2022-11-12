@@ -21,10 +21,21 @@ ADD    0 0 2  /* Increment stack pointer */
 /* Get argument from the stack */
 LOADIM 3 1    /* Load constant 1 */
 SUB    3 1 3  /* r_3 now hold the address of argument 1 */
-LOAD   3 3 0  /* r_3 now hols argument 1 */
+LOAD   3 3 0  /* r_3 now hold argument 1 */
 /* Do work */
+LOADIM 7 30   /* address of cleanup: 30 */
+BRCZER 7 3    /* if a == 0, goto cleanup */
 LOADIM 4 1    /* Load constant 1 */
 SUB    3 3 4  /* r3 = r3 - 1 */
+OUTPUT 0 0 3  /* print r3 */
+/* recurse: */
+LOADIM 5 12   /* address of decrement */
+              /* Use r7 as return address */
+STORE  7 0 0  /* store the return address at sp, return address is cleanup */
+ADD    0 0 4  /* Increment sp by 1 */
+STORE  3 0 0  /* Store a as an argument at sp */
+ADD    0 0 4  /* Increment sp by 1 */
+BRCUNC 0 0 5 /* call decrement */
 /* CLEANUP */
 MOVE   0 1 0  /* sp = bp */
 LOAD   1 1 0  /* bp = mem[bp] */

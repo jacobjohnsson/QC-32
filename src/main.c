@@ -2,9 +2,11 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 #include "debug.h"
 #include "state.h"
+#include "timing.h"
 
 #define INSTRUCTION(I, a, b, c) I << OP_CODE_SHIFT | a << REG_A_SHIFT | b << REG_B_SHIFT | c << REG_C_SHIFT
 
@@ -140,6 +142,8 @@ assemble (char * path, uint * program)
   if (fclose (file) != 0) {
     printf ("Unable to close file %s", path);
   }
+
+  return true;
 }
 
 void
@@ -186,150 +190,167 @@ single_step (QCState *state, uint instruction)
   }
 }
 
-void main (int argc, char *argv[])
+static void
+emulate_instruction (QCState *state, uint instruction)
 {
-  QCState *state = QC_state_new();
   uint reg_a = 0;
   uint reg_b = 0;
   uint reg_c = 0;
-  char *program_file;
 
-  /* TODO: Refactor to switch with fall through */
-  if (argc == 2) {
-    debug_msg ("Opening file ");
-    debug_msg (argv[1]);
-    debug_msg ("\n");
-    program_file = argv[1];
-  } else if (argc == 3) {
-    debug_msg ("Opening file ");
-    debug_msg (argv[1]);
-    debug_msg ("\n");
-    program_file = argv[1];
-    state->singlestepping = (strcmp (argv[2], "d") == 0);
+  switch (OP_CODE(instruction)) {
+    case ADDITION:
+      debug_msg ("ADDITION\n");
+      read_standard_instruction_registers (instruction, &reg_a, &reg_b,
+          &reg_c);
+      state->registers[reg_a] =
+        state->registers[reg_b] + state->registers[reg_c];
+      break;
+    case SUBTRACTION:
+      debug_msg ("SUBTRACTION\n");
+      read_standard_instruction_registers (instruction, &reg_a, &reg_b,
+          &reg_c);
+      state->registers[reg_a] =
+        state->registers[reg_b] - state->registers[reg_c];
+      break;
+    case MULTIPLICATION:
+      debug_msg ("MULTIPLICATION\n");
+      read_standard_instruction_registers (instruction, &reg_a, &reg_b,
+          &reg_c);
+      state->registers[reg_a] =
+        state->registers[reg_b] * state->registers[reg_c];
+      break;
+    case DIVISION:
+      debug_msg ("DIVISION\n");
+      read_standard_instruction_registers (instruction, &reg_a, &reg_b,
+          &reg_c);
+      state->registers[reg_a] =
+        state->registers[reg_b] / state->registers[reg_c];
+      break;
+    case HALT:
+      debug_msg ("HALT\n");
+      read_standard_instruction_registers (instruction, &reg_a, &reg_b,
+          &reg_c);
+      state->halted = true;
+      break;
+    case OUTPUT:
+      debug_msg ("OUTPUT\n");
+      read_standard_instruction_registers (instruction, &reg_a, &reg_b,
+          &reg_c);
+      printf("%u\n", state->registers[reg_c]);
+      break;
+    case INPUT:
+      debug_msg ("INPUT\n");
+      uint input;
+
+      read_standard_instruction_registers (instruction, &reg_a, &reg_b,
+          &reg_c);
+      scanf ("%u", &input);
+      state->registers[reg_c] = (uint) input;
+      break;
+    case LOAD:
+      debug_msg ("LOAD\n");
+      read_standard_instruction_registers (instruction, &reg_a, &reg_b,
+          &reg_c);
+      state->registers[reg_a] = state->memory[state->registers[reg_b]];
+      break;
+    case STORE:
+      debug_msg ("STORE\n");
+      read_standard_instruction_registers (instruction, &reg_a, &reg_b,
+          &reg_c);
+      state->memory[state->registers[reg_b]] = state->registers[reg_a];
+      break;
+    case BRANCH_UNCONDITIONALLY:
+      debug_msg ("BRANCH_UNCONDITIONALLY\n");
+      read_standard_instruction_registers (instruction, &reg_a, &reg_b,
+          &reg_c);
+      state->pc = state->registers[reg_c];
+      break;
+    case BRANCH_IF_ZERO:
+      debug_msg ("BRANCH_IF_ZERO\n");
+      read_standard_instruction_registers (instruction, &reg_a, &reg_b,
+          &reg_c);
+      if (state->registers[reg_b] == 0) {
+        state->pc = state->registers[reg_a];
+      }
+      break;
+    case BRANCH_IF_NON_ZERO:
+      debug_msg ("BRANCH_IF_NON_ZERO\n");
+      read_standard_instruction_registers (instruction, &reg_a, &reg_b,
+          &reg_c);
+      state->pc = (state->registers[reg_b] != 0) ?
+        state->registers[reg_a] : state->pc;
+      break;
+    case NAND:
+      debug_msg ("NAND\n");
+      read_standard_instruction_registers (instruction, &reg_a, &reg_b,
+          &reg_c);
+      state->registers[reg_a] =
+        ~(state->registers[reg_b] & state->registers[reg_c]) & ((1 << 25) - 1);
+      break;
+    case OR:
+      debug_msg ("OR\n");
+      read_standard_instruction_registers (instruction, &reg_a, &reg_b,
+          &reg_c);
+      state->registers[reg_a] =
+        state->registers[reg_b] | state->registers[reg_c];
+      break;
+    case MOVE:
+      debug_msg ("MOVE\n");
+      read_standard_instruction_registers (instruction, &reg_a, &reg_b,
+          &reg_c);
+      state->registers[reg_a] = state->registers[reg_b];
+      break;
+    case LOAD_IMMEDIATELY:
+      debug_msg ("LOAD_IMMEDIATELY\n");
+      reg_a = (instruction & 0b00000111 << 25) >> 25;
+      uint value = instruction & ((1 << 25) - 1);
+      state->registers[reg_a] = value;
+      break;
+    default:
+      fatal_error ("NO VALID INSTRUCTION FOUND!");
+  }
+}
+
+int main (int argc, char *argv[])
+{
+  QCState *state = QC_state_new();
+  char *program_file;
+  uint cycle_count = 0;
+  struct timespec t0;
+  struct timespec target_time;
+  struct timespec current_time;
+  struct timespec sleep_time;
+
+  switch (argc) {
+    case 3:
+      state->singlestepping = (strcmp (argv[2], "d") == 0);
+    case 2:
+      debug_msg ("Opening file ");
+      debug_msg (argv[1]);
+      debug_msg ("\n");
+      program_file = argv[1];
   }
 
   assemble (argv[1], state->program);
 
+  start_timer();
+
   while (!state->halted) {
+    /* every 100 cycles we wait 100 milliseconds (1KHz) */
+    if (cycle_count % 100 == 0) {
+      sleep_until_micro (100000);
+    }
+
     uint instruction = state->program[state->pc];
 
     if (state->singlestepping) {
       single_step (state, instruction);
     }
 
-    switch (OP_CODE(instruction)) {
-      case ADDITION:
-        debug_msg ("ADDITION\n");
-        read_standard_instruction_registers (instruction, &reg_a, &reg_b,
-            &reg_c);
-        state->registers[reg_a] =
-            state->registers[reg_b] + state->registers[reg_c];
-        break;
-      case SUBTRACTION:
-        debug_msg ("SUBTRACTION\n");
-        read_standard_instruction_registers (instruction, &reg_a, &reg_b,
-            &reg_c);
-        state->registers[reg_a] =
-            state->registers[reg_b] - state->registers[reg_c];
-        break;
-      case MULTIPLICATION:
-        debug_msg ("MULTIPLICATION\n");
-        read_standard_instruction_registers (instruction, &reg_a, &reg_b,
-            &reg_c);
-        state->registers[reg_a] =
-            state->registers[reg_b] * state->registers[reg_c];
-        break;
-      case DIVISION:
-        debug_msg ("DIVISION\n");
-        read_standard_instruction_registers (instruction, &reg_a, &reg_b,
-            &reg_c);
-        state->registers[reg_a] =
-            state->registers[reg_b] / state->registers[reg_c];
-        break;
-      case HALT:
-        debug_msg ("HALT\n");
-        read_standard_instruction_registers (instruction, &reg_a, &reg_b,
-            &reg_c);
-        state->halted = true;
-        break;
-      case OUTPUT:
-        debug_msg ("OUTPUT\n");
-        read_standard_instruction_registers (instruction, &reg_a, &reg_b,
-            &reg_c);
-        printf("%u\n", state->registers[reg_c]);
-        break;
-      case INPUT:
-        debug_msg ("INPUT\n");
-        uint input;
+    emulate_instruction (state, instruction);
 
-        read_standard_instruction_registers (instruction, &reg_a, &reg_b,
-            &reg_c);
-        scanf ("%u", &input);
-        state->registers[reg_c] = (uint) input;
-        break;
-      case LOAD:
-        debug_msg ("LOAD\n");
-        read_standard_instruction_registers (instruction, &reg_a, &reg_b,
-            &reg_c);
-        state->registers[reg_a] = state->memory[state->registers[reg_b]];
-        break;
-      case STORE:
-        debug_msg ("STORE\n");
-        read_standard_instruction_registers (instruction, &reg_a, &reg_b,
-            &reg_c);
-        state->memory[state->registers[reg_b]] = state->registers[reg_a];
-        break;
-      case BRANCH_UNCONDITIONALLY:
-        debug_msg ("BRANCH_UNCONDITIONALLY\n");
-        read_standard_instruction_registers (instruction, &reg_a, &reg_b,
-            &reg_c);
-        state->pc = state->registers[reg_c];
-        break;
-      case BRANCH_IF_ZERO:
-        debug_msg ("BRANCH_IF_ZERO\n");
-        read_standard_instruction_registers (instruction, &reg_a, &reg_b,
-            &reg_c);
-        if (state->registers[reg_b] == 0) {
-          state->pc = state->registers[reg_a];
-        }
-        break;
-      case BRANCH_IF_NON_ZERO:
-        debug_msg ("BRANCH_IF_NON_ZERO\n");
-        read_standard_instruction_registers (instruction, &reg_a, &reg_b,
-            &reg_c);
-        state->pc = (state->registers[reg_b] != 0) ?
-            state->registers[reg_a] : state->pc;
-        break;
-      case NAND:
-        debug_msg ("NAND\n");
-        read_standard_instruction_registers (instruction, &reg_a, &reg_b,
-            &reg_c);
-        state->registers[reg_a] =
-            ~(state->registers[reg_b] & state->registers[reg_c]) & ((1 << 25) - 1);
-        break;
-      case OR:
-        debug_msg ("OR\n");
-        read_standard_instruction_registers (instruction, &reg_a, &reg_b,
-            &reg_c);
-        state->registers[reg_a] =
-            state->registers[reg_b] | state->registers[reg_c];
-        break;
-      case MOVE:
-        debug_msg ("MOVE\n");
-        read_standard_instruction_registers (instruction, &reg_a, &reg_b,
-            &reg_c);
-        state->registers[reg_a] = state->registers[reg_b];
-        break;
-      case LOAD_IMMEDIATELY:
-        debug_msg ("LOAD_IMMEDIATELY\n");
-        reg_a = (instruction & 0b00000111 << 25) >> 25;
-        uint value = instruction & ((1 << 25) - 1);
-        state->registers[reg_a] = value;
-        break;
-      default:
-        fatal_error ("NO VALID INSTRUCTION FOUND!");
-    }
     state->pc++;
+    cycle_count++;
   }
 
   QC_state_free (state);

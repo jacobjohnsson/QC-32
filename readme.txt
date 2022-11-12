@@ -34,13 +34,16 @@
 
     * One input device, capable of reading ASCII characters.
 
+  The QC-32 operates at a frequency of 1 KHz. This means that the machine will
+  complete 1000 instructions every second.
+
 
   Behavior
   --------
 
-  The special memory holding the program shall be initiated with a set of 
+  The special memory holding the program shall be initiated with a set of
   instructions. All registers shall be initiated with a value of 0. A special
-  'program counter' shall start with the value of 0 and be incremented by 1 
+  'program counter' shall start with the value of 0 and be incremented by 1
   after each instruction is executed, unless the instruction says otherwise.
 
   Once the QC-32 has been initialized it shall begin execution. When executing
@@ -64,11 +67,11 @@
 
   Standard Operators
   ------------------
-  
+
   Each Standard Operator performs some computation involving up to three
   registers, A, B and C. Each register is described by a three bit segment of
   the word. The register C is described by the three least bits, the register B
-  is described by the next three more bits, and register C is described by the 
+  is described by the next three more bits, and register C is described by the
   thee next more bits.
 
                                       A     C
@@ -95,7 +98,7 @@
 
            #2. Multiplication. MUL
 
-                The register A receives the value in register B multiplied by 
+                The register A receives the value in register B multiplied by
                 the value in register C.
 
            #3. Division. DIV
@@ -119,7 +122,7 @@
 
            #7. Load. LOAD
 
-                The register A receives the value at the offset indicated by 
+                The register A receives the value at the offset indicated by
                 the value at register B.
 
            #8. Store. STORE
@@ -133,22 +136,22 @@
 
            #10. Branch If Zero. BRCZER
 
-                Sets the program counter to the value in A if the value in 
+                Sets the program counter to the value in A if the value in
                 register B is zero. Otherwise it does nothing.
 
            #11. Branch non Zero. BRCNZE
 
-                Sets the program counter to the value in A if the value in 
+                Sets the program counter to the value in A if the value in
                 register B is not zero. Otherwise it does nothing.
 
            #12. NAND. NAND
 
-                The register A receives the value at register B NAND:ed with 
+                The register A receives the value at register B NAND:ed with
                 the register C.
 
            #13. OR. OR
 
-                The register A receives the value at register B OR:ed with 
+                The register A receives the value at register B OR:ed with
                 the register C.
 
            #14. Move. MOVE
@@ -161,7 +164,7 @@
 
   Special operators do not conform to the previously mentioned structure,
   instead they are defined below. The operator number is the same as for
-  standard operators, the next 3 bits identifies a register and the other 25 
+  standard operators, the next 3 bits identifies a register and the other 25
   bits represents a whole value.
 
                operator number
@@ -182,19 +185,25 @@
 
   Programmers Guide
   -----------------
-  
+
   The following section describes how to write function calls on the QC-32. This
-  computer does not have a conventional stack yet it can be emulated by 
+  computer does not have the conventional instructions yet it can be emulated by
   following the steps below.
 
-  This strategy assumes that the stack pointer is always kept in r_0 and the
-  base pointer in r_1.
+  This strategy assumes that the stack pointer is always kept in r_0, the base
+  pointer in r_1, arguments are put on the stack and the return value is stored
+  in r_2.
 
-  Note that the caller can no longer make any assumptions about the other 
-  registers since the callee is free to do what ever it wants with them, 
-  therefore if the caller wants to use the registers after the function call it 
-  must save them in memory first. The stack will look like the following 
-  ahead of the call:
+  The caller must first save it's own registers on the stack, the write the
+  return address to the stack followed by potential arguments. After calling
+  the function with a branch instruction, the caller must restore it's
+  registers.
+
+  Note that the caller can no longer make any assumptions about the other
+  registers since the callee is free to do what ever it wants with them,
+  therefore if the caller wants to use the registers after the function call it
+  must save them in memory first. The stack will look like the following ahead
+  of the call:
 
                      .----------------.    '
                      |                |    '
@@ -208,20 +217,20 @@
                      | argument 1     |    '
                      .----------------.    '
                      | return address |    /
-                     .----------------.    
+                     .----------------.
                      | saved register |    \
                      .----------------.    ' frame belonging to the caller
                      | saved register |    '
                      .----------------.    '
 
   The callee must perform setup and cleanup appropriately. Setup is performed
-  by saving the value of the current base pointer so that when control is 
+  by saving the value of the current base pointer so that when control is
   returned to the caller, it will have it's original base pointer. The second
   thing that must be done during setup is to set the current stack frames base
   pointer correctly. It should be set to the same as the stack pointer.
   Therefore setup is performed as follows:
 
-    /* Save the value of bp at the memory location pointed to by sp */ 
+    /* Save the value of bp at the memory location pointed to by sp */
     STORE bp sp
     /* Set bp to sp */
     MOVE bp sp
@@ -240,7 +249,7 @@
                      | argument 1     |    '
                      .----------------.    '
                      | return address |    /
-                     .----------------.    
+                     .----------------.
                      | saved register |    \
                      .----------------.    ' frame belonging to the caller
                      | saved register |    '
@@ -268,7 +277,7 @@
                      | argument 1     |    '
                      .----------------.    '
                      | return address |    /
-                     .----------------.    
+                     .----------------.
                      | saved register |    \
                      .----------------.    ' frame belonging to the caller
                      | saved register |    '
